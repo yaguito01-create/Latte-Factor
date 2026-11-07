@@ -1,0 +1,498 @@
+<meta charset="UTF-8">
+<title>The Latte Factor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+  :root{
+    --bg: #D8D9C9;
+    --paper: #F4F3E9;
+    --paper-dim: #E8E7D5;
+    --ink: #1B2A20;
+    --ink-soft: #5B6657;
+    --spent: #A23B2E;
+    --grown: #7C5E1C;
+    --rule: #C7C6B2;
+    --shadow: rgba(27,42,32,.22);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg: #0B100C;
+      --paper: #1A2419;
+      --paper-dim: #222E20;
+      --ink: #E8E6D6;
+      --ink-soft: #9CA68E;
+      --spent: #E08A72;
+      --grown: #D8AE55;
+      --rule: #32402F;
+      --shadow: rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg: #0B100C;
+    --paper: #1A2419;
+    --paper-dim: #222E20;
+    --ink: #E8E6D6;
+    --ink-soft: #9CA68E;
+    --spent: #E08A72;
+    --grown: #D8AE55;
+    --rule: #32402F;
+    --shadow: rgba(0,0,0,.5);
+  }
+
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    display:flex;
+    justify-content:center;
+    padding: 48px 16px 72px;
+    min-height:100%;
+  }
+
+  .counter{ width:100%; max-width:600px; }
+
+  .receipt{
+    position:relative;
+    background: var(--paper);
+    color: var(--ink);
+    padding: 6px 34px 2px;
+    box-shadow: 0 18px 40px -16px var(--shadow), 0 2px 0 var(--rule);
+  }
+  .tear{
+    height:12px;
+    background:
+      linear-gradient(135deg, var(--bg) 50%, transparent 50.5%) 0 0/14px 14px repeat-x,
+      linear-gradient(-135deg, var(--bg) 50%, transparent 50.5%) 0 0/14px 14px repeat-x;
+  }
+  .tear-top{ margin: 0 -34px 18px; }
+  .tear-bottom{ margin: 24px -34px 0; transform: scaleY(-1); }
+
+  .masthead{ text-align:center; padding-top:4px; }
+  .masthead .shop{
+    font-family:"Big Shoulders Display", sans-serif;
+    font-weight:800;
+    font-size: clamp(34px, 7vw, 46px);
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    line-height: .95;
+    text-wrap: balance;
+  }
+  .masthead .sub{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color: var(--ink-soft);
+    margin-top:6px;
+  }
+  .masthead .meta{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:11.5px;
+    color: var(--ink-soft);
+    display:flex;
+    justify-content:space-between;
+    margin-top:14px;
+    border-top:1px dashed var(--rule);
+    border-bottom:1px dashed var(--rule);
+    padding:7px 0;
+  }
+
+  h2.section-label{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:11px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color: var(--ink-soft);
+    margin: 26px 0 12px;
+    text-align:center;
+  }
+
+  .lineitem{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    padding:9px 0;
+    border-bottom:1px dotted var(--rule);
+    font-family:"IBM Plex Mono", monospace;
+    font-size:14px;
+  }
+  .lineitem:last-child{ border-bottom:none; }
+  .lineitem .qty{ color: var(--ink-soft); width:3.4em; flex:none; }
+  .lineitem .desc{ flex:1; min-width:0; }
+  .lineitem .desc input[type="text"]{
+    width:100%;
+    border:none;
+    background:transparent;
+    color:inherit;
+    font:inherit;
+    text-transform:uppercase;
+    letter-spacing:.02em;
+    padding:0;
+  }
+  .lineitem .amt{ flex:none; display:flex; align-items:baseline; gap:2px; }
+  .lineitem .amt .cur{ color:var(--ink-soft); }
+  .lineitem .amt input[type="number"]{
+    width:4.4em;
+    border:none;
+    background:transparent;
+    color:inherit;
+    font:inherit;
+    text-align:right;
+    padding:0;
+  }
+  input:focus-visible, select:focus-visible, button:focus-visible, input[type=range]:focus-visible{
+    outline: 2px solid var(--grown);
+    outline-offset: 2px;
+    border-radius:2px;
+  }
+
+  .knobs{ display:flex; flex-direction:column; gap:16px; padding: 4px 0 6px; }
+  .knob{ display:flex; flex-direction:column; gap:7px; }
+  .knob .row{
+    display:flex; justify-content:space-between; align-items:baseline;
+    font-family:"IBM Plex Mono", monospace; font-size:12px;
+    color: var(--ink-soft); text-transform:uppercase; letter-spacing:.08em;
+  }
+  .knob .row b{ color:var(--ink); font-size:13.5px; letter-spacing:0; text-transform:none; font-weight:600; }
+  input[type="range"]{
+    -webkit-appearance:none; appearance:none;
+    width:100%; height:16px; background:transparent; margin:0;
+  }
+  input[type="range"]::-webkit-slider-runnable-track{
+    height:3px; background: var(--rule);
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none;
+    width:14px; height:14px; border-radius:50%;
+    background: var(--grown);
+    border: 2px solid var(--paper);
+    box-shadow:0 0 0 1px var(--grown);
+    margin-top:-6px;
+    cursor:pointer;
+  }
+  input[type="range"]::-moz-range-track{ height:3px; background: var(--rule); }
+  input[type="range"]::-moz-range-thumb{
+    width:12px; height:12px; border-radius:50%; background: var(--grown);
+    border: 2px solid var(--paper); box-shadow:0 0 0 1px var(--grown); cursor:pointer;
+  }
+
+  .chartwrap{ margin: 6px 0 4px; }
+  canvas{ width:100%; height:150px; display:block; }
+  .legend{
+    display:flex; justify-content:center; gap:22px; margin-top:8px;
+    font-family:"IBM Plex Mono", monospace; font-size:11px; color: var(--ink-soft);
+  }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .legend i{ width:8px; height:8px; display:inline-block; }
+  .legend .l-spent i{ background: var(--spent); }
+  .legend .l-grown i{ background: var(--grown); }
+
+  .totals{
+    margin: 22px 0 8px;
+    border-top: 1px dashed var(--rule);
+    padding-top: 16px;
+  }
+  .totrow{
+    display:flex; justify-content:space-between;
+    font-family:"IBM Plex Mono", monospace; font-size:13px;
+    padding: 5px 0;
+  }
+  .totrow .k{ color: var(--ink-soft); text-transform:uppercase; letter-spacing:.06em; }
+  .totrow .v{ font-variant-numeric: tabular-nums; }
+  .totrow.spent .v{ color: var(--spent); }
+
+  .grandtotal{
+    position:relative;
+    margin-top:18px;
+    padding-top:16px;
+    border-top: 2px solid var(--ink);
+    text-align:center;
+  }
+  .grandtotal .label{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:11.5px; letter-spacing:.14em; text-transform:uppercase;
+    color: var(--ink-soft);
+  }
+  .grandtotal .amount{
+    font-family:"Big Shoulders Display", sans-serif;
+    font-weight:800;
+    font-size: clamp(42px, 11vw, 64px);
+    line-height:1;
+    color: var(--grown);
+    font-variant-numeric: tabular-nums;
+    margin-top:4px;
+  }
+  .stamp{
+    display:inline-block;
+    margin-top:14px;
+    padding:6px 14px;
+    border:2px solid var(--spent);
+    color: var(--spent);
+    font-family:"IBM Plex Mono", monospace;
+    font-size:11px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    transform: rotate(-4deg);
+    transition: transform .25s ease, opacity .25s ease;
+  }
+  .stamp.thud{ transform: rotate(-4deg) scale(1.12); }
+
+  footer.ticket-foot{
+    margin-top:28px;
+    padding-top:14px;
+    border-top:1px dashed var(--rule);
+    text-align:center;
+  }
+  .barcode{
+    display:flex; justify-content:center; gap:2px; height:30px; margin:0 auto 8px;
+  }
+  .barcode i{ display:inline-block; width:2px; background: var(--ink); opacity:.75; }
+  .ticket-foot .thanks{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color: var(--ink-soft);
+  }
+  .ticket-foot .thanks b{ color:var(--ink); }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; animation:none !important; }
+  }
+</style>
+
+<div class="counter">
+  <main class="receipt" id="receipt">
+    <div class="tear tear-top" aria-hidden="true"></div>
+
+    <div class="masthead">
+      <div class="shop">The Latte Factor</div>
+      <div class="sub">true cost calculator</div>
+      <div class="meta">
+        <span id="todayStr"></span>
+        <span>RECEIPT #0847</span>
+      </div>
+    </div>
+
+    <h2 class="section-label">Your habit, itemized</h2>
+    <div class="lineitem">
+      <span class="qty">1x</span>
+      <span class="desc"><input type="text" id="itemName" value="Oat milk latte" maxlength="24" aria-label="Habit name"></span>
+      <span class="amt"><span class="cur">$</span><input type="number" id="itemCost" value="5.50" min="0" step="0.25" aria-label="Cost per purchase"></span>
+    </div>
+
+    <h2 class="section-label">Adjust the habit</h2>
+    <div class="knobs">
+      <div class="knob">
+        <div class="row"><span>Times per week</span><b id="freqOut">7</b></div>
+        <input type="range" id="freq" min="1" max="14" step="1" value="7" aria-label="Times per week">
+      </div>
+      <div class="knob">
+        <div class="row"><span>Years invested instead</span><b id="yearsOut">20 yrs</b></div>
+        <input type="range" id="years" min="5" max="40" step="1" value="20" aria-label="Years invested instead">
+      </div>
+      <div class="knob">
+        <div class="row"><span>Market return, annualized</span><b id="rateOut">7%</b></div>
+        <input type="range" id="rate" min="2" max="12" step="0.5" value="7" aria-label="Annual market return percent">
+      </div>
+    </div>
+
+    <h2 class="section-label">If you invested it instead</h2>
+    <div class="chartwrap">
+      <canvas id="chart" width="600" height="150" role="img" aria-label="Chart comparing cumulative amount spent against the compounded value if invested"></canvas>
+      <div class="legend">
+        <span class="l-spent"><i></i>Spent, sitting in cups</span>
+        <span class="l-grown"><i></i>Invested, compounding</span>
+      </div>
+    </div>
+
+    <div class="totals">
+      <div class="totrow spent"><span class="k">Total spent</span><span class="v" id="totalSpent">$0.00</span></div>
+      <div class="totrow"><span class="k">Monthly habit cost</span><span class="v" id="monthlyCost">$0.00</span></div>
+    </div>
+
+    <div class="grandtotal">
+      <div class="label">Opportunity cost, <span id="yearsLabel">20</span> years</div>
+      <div class="amount" id="grandAmount">$0</div>
+      <div class="stamp" id="stamp">true cost: brewed</div>
+    </div>
+
+    <footer class="ticket-foot">
+      <div class="barcode" id="barcode" aria-hidden="true"></div>
+      <div class="thanks">thank you for shopping — <b>invest the change</b></div>
+    </footer>
+
+    <div class="tear tear-bottom" aria-hidden="true"></div>
+  </main>
+</div>
+
+<script>
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  $('todayStr').textContent = new Date().toLocaleDateString(undefined, { year:'numeric', month:'short', day:'2-digit' }).toUpperCase();
+
+  const barcode = $('barcode');
+  for (let i=0;i<48;i++){
+    const bar = document.createElement('i');
+    const w = Math.random() > 0.8 ? 3 : 1.5;
+    bar.style.width = w + 'px';
+    bar.style.height = (Math.random() > 0.5 ? 30 : 20) + 'px';
+    barcode.appendChild(bar);
+  }
+
+  const fmt = (n) => '$' + n.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  const fmt2 = (n) => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const el = {
+    itemName: $('itemName'), itemCost: $('itemCost'),
+    freq: $('freq'), freqOut: $('freqOut'),
+    years: $('years'), yearsOut: $('yearsOut'),
+    rate: $('rate'), rateOut: $('rateOut'),
+    totalSpent: $('totalSpent'), monthlyCost: $('monthlyCost'),
+    grandAmount: $('grandAmount'), yearsLabel: $('yearsLabel'),
+    stamp: $('stamp'),
+  };
+
+  const canvas = $('chart');
+  const ctx = canvas.getContext('2d');
+  let dpr = Math.max(1, window.devicePixelRatio || 1);
+
+  function sizeCanvas(){
+    const rect = canvas.getBoundingClientRect();
+    dpr = Math.max(1, window.devicePixelRatio || 1);
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(150 * dpr);
+  }
+
+  function readInk(varName){
+    return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+  }
+
+  let series = { spent: [], grown: [] };
+  let animFrame = null;
+  let animStart = 0;
+  const ANIM_MS = 900;
+
+  function compute(){
+    const cost = Math.max(0, parseFloat(el.itemCost.value) || 0);
+    const freq = parseInt(el.freq.value, 10);
+    const years = parseInt(el.years.value, 10);
+    const ratePct = parseFloat(el.rate.value);
+
+    el.freqOut.textContent = freq;
+    el.yearsOut.textContent = years + ' yrs';
+    el.yearsLabel.textContent = years;
+    el.rateOut.textContent = ratePct + '%';
+
+    const weekly = cost * freq;
+    const monthly = weekly * (52/12);
+    const months = years * 12;
+    const i = (ratePct/100) / 12;
+
+    el.monthlyCost.textContent = fmt2(monthly);
+
+    const spent = [];
+    const grown = [];
+    const steps = Math.min(months, 240);
+    for (let s = 0; s <= steps; s++){
+      const m = Math.round((s/steps) * months);
+      spent.push(monthly * m);
+      const fv = i > 0 ? monthly * (((Math.pow(1+i, m) - 1) / i)) : monthly * m;
+      grown.push(fv);
+    }
+    series = { spent, grown };
+
+    const totalSpentVal = spent[spent.length-1] || 0;
+    const fvVal = grown[grown.length-1] || 0;
+
+    el.totalSpent.textContent = fmt2(totalSpentVal);
+
+    animateNumber(el.grandAmount, fvVal);
+
+    el.stamp.classList.remove('thud');
+    void el.stamp.offsetWidth;
+    el.stamp.classList.add('thud');
+
+    drawChart(reduceMotion ? 1 : 0);
+  }
+
+  let numberAnimFrame = null;
+  function animateNumber(node, target){
+    if (numberAnimFrame) cancelAnimationFrame(numberAnimFrame);
+    if (reduceMotion){ node.textContent = fmt(target); return; }
+    const start = performance.now();
+    const from = parseFloat((node.dataset.raw || '0'));
+    node.dataset.raw = target;
+    function tick(t){
+      const p = Math.min(1, (t - start) / 700);
+      const eased = 1 - Math.pow(1 - p, 3);
+      const val = from + (target - from) * eased;
+      node.textContent = fmt(val);
+      if (p < 1) numberAnimFrame = requestAnimationFrame(tick);
+    }
+    numberAnimFrame = requestAnimationFrame(tick);
+  }
+
+  function drawChart(forceProgress){
+    if (animFrame) cancelAnimationFrame(animFrame);
+    const ink = readInk('--ink');
+    const inkSoft = readInk('--ink-soft');
+    const spentCol = readInk('--spent');
+    const grownCol = readInk('--grown');
+    const rule = readInk('--rule');
+
+    function render(progress){
+      const w = canvas.width, h = canvas.height;
+      ctx.clearRect(0,0,w,h);
+
+      const pad = 10 * dpr;
+      const maxVal = Math.max(1, ...series.grown);
+      const n = series.grown.length;
+      const count = Math.max(1, Math.floor(n * progress));
+
+      ctx.strokeStyle = rule;
+      ctx.lineWidth = 1 * dpr;
+      ctx.beginPath();
+      for (let gy = 0; gy <= 3; gy++){
+        const y = pad + (h - pad*2) * (gy/3);
+        ctx.moveTo(pad, y); ctx.lineTo(w-pad, y);
+      }
+      ctx.stroke();
+
+      const dotSize = Math.max(2, Math.min(4, (w / n) * 0.6)) * dpr / dpr;
+
+      function plot(arr, color){
+        ctx.fillStyle = color;
+        for (let k=0; k<count; k++){
+          const x = pad + (w - pad*2) * (k/(n-1));
+          const y = h - pad - (h - pad*2) * (arr[k]/maxVal);
+          ctx.fillRect(x - dotSize/2, y - dotSize/2, dotSize*dpr, dotSize*dpr);
+        }
+      }
+      plot(series.spent, spentCol);
+      plot(series.grown, grownCol);
+    }
+
+    if (forceProgress >= 1){ render(1); return; }
+    const start = performance.now();
+    function tick(t){
+      const p = Math.min(1, (t - start) / ANIM_MS);
+      render(p);
+      if (p < 1) animFrame = requestAnimationFrame(tick);
+    }
+    animFrame = requestAnimationFrame(tick);
+  }
+
+  window.addEventListener('resize', () => { sizeCanvas(); drawChart(1); });
+
+  [el.itemName, el.itemCost, el.freq, el.years, el.rate].forEach(input => {
+    input.addEventListener('input', compute);
+  });
+
+  sizeCanvas();
+  compute();
+})();
+</script>
