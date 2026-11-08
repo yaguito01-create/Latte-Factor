@@ -1,316 +1,555 @@
-import { useId, useMemo, useState } from "react";
+<meta charset="UTF-8">
+<title>The Iced Latte Factor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 
-const formatMoney = new Intl.NumberFormat("en-GB", {
-  style: "currency",
-  currency: "GBP",
-  maximumFractionDigits: 0,
-});
+<style>
+  :root{
+    --bg: #BEB079;
+    --paper: #EDE3B2;
+    --paper-dim: #E2D59A;
+    --ink: #3A2F1D;
+    --ink-soft: #7D6F48;
+    --spent: #A23B2E;
+    --grown: #3759E8;
+    --rule: #CDBE87;
+    --shadow: rgba(58,47,29,.22);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg: #14110A;
+      --paper: #2A2416;
+      --paper-dim: #352D1B;
+      --ink: #E8DFB0;
+      --ink-soft: #A99B6C;
+      --spent: #E08A72;
+      --grown: #7C97FF;
+      --rule: #3D3420;
+      --shadow: rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg: #14110A;
+    --paper: #2A2416;
+    --paper-dim: #352D1B;
+    --ink: #E8DFB0;
+    --ink-soft: #A99B6C;
+    --spent: #E08A72;
+    --grown: #7C97FF;
+    --rule: #3D3420;
+    --shadow: rgba(0,0,0,.5);
+  }
 
-const formatMoneyExact = new Intl.NumberFormat("en-GB", {
-  style: "currency",
-  currency: "GBP",
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    display:flex;
+    justify-content:center;
+    padding: 40px 16px 64px;
+    min-height:100%;
+  }
 
-function RangeControl({
-  label,
-  valueLabel,
-  min,
-  max,
-  step,
-  value,
-  onChange,
-}: {
-  label: string;
-  valueLabel: string;
-  min: number;
-  max: number;
-  step: number;
-  value: number;
-  onChange: (value: number) => void;
-}) {
-  const id = useId();
-  const progress = ((value - min) / (max - min)) * 100;
+  .page{ width:100%; max-width:600px; display:flex; flex-direction:column; align-items:center; }
 
-  return (
-    <div className="range-control">
-      <div className="range-meta">
-        <label htmlFor={id}>{label}</label>
-        <output htmlFor={id}>{valueLabel}</output>
+  .page-intro{
+    display:flex; align-items:center; gap:8px;
+    font-family:"IBM Plex Mono", monospace;
+    font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+    color: var(--ink-soft);
+    margin-bottom:16px;
+  }
+  .status-dot{
+    width:7px; height:7px; border-radius:50%;
+    background: var(--spent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--spent) 25%, transparent);
+  }
+
+  .page-note{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+    color: var(--ink-soft);
+    margin-top:18px;
+  }
+
+  .receipt{
+    position:relative;
+    width:100%;
+    background: var(--paper);
+    color: var(--ink);
+    padding: 6px 34px 2px;
+    box-shadow: 0 18px 40px -16px var(--shadow), 0 2px 0 var(--rule);
+  }
+  .tear{
+    height:12px;
+    background:
+      linear-gradient(135deg, var(--bg) 50%, transparent 50.5%) 0 0/14px 14px repeat-x,
+      linear-gradient(-135deg, var(--bg) 50%, transparent 50.5%) 0 0/14px 14px repeat-x;
+  }
+  .tear-top{ margin: 0 -34px 18px; }
+  .tear-bottom{ margin: 24px -34px 0; transform: scaleY(-1); }
+
+  .receipt-header{ text-align:center; padding-top:4px; }
+  .cup-mark{ display:flex; justify-content:center; margin-bottom:6px; }
+  .cup-mark svg{ width:34px; height:34px; stroke: var(--ink-soft); stroke-width:2.4; fill:none; stroke-linecap:round; stroke-linejoin:round; }
+
+  .overline{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+    color: var(--ink-soft);
+    margin:0 0 6px;
+  }
+  .receipt-header h1{
+    font-family:"Big Shoulders Display", sans-serif;
+    font-weight:800;
+    font-size: clamp(32px, 7vw, 44px);
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    line-height: .95;
+    text-wrap: balance;
+    margin:0;
+  }
+  .header-note{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:11.5px;
+    font-style:italic;
+    color: var(--ink-soft);
+    margin:8px 0 0;
+  }
+
+  .receipt-meta{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:11.5px;
+    color: var(--ink-soft);
+    display:flex;
+    justify-content:space-between;
+    margin-top:14px;
+    border-top:1px dashed var(--rule);
+    border-bottom:1px dashed var(--rule);
+    padding:7px 0;
+  }
+
+  .receipt-section{ margin-top:26px; }
+
+  .section-heading{
+    display:flex; align-items:baseline; gap:10px;
+    margin-bottom:12px;
+  }
+  .section-heading span{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:11px; color: var(--ink-soft);
+    border:1px solid var(--rule);
+    padding:1px 5px;
+  }
+  .section-heading h2{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:11px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color: var(--ink-soft);
+    margin:0;
+  }
+
+  .line-item{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    padding:9px 0;
+    border-bottom:1px dotted var(--rule);
+    font-family:"IBM Plex Mono", monospace;
+    font-size:14px;
+  }
+  .line-item .quantity{ color: var(--ink-soft); width:2em; flex:none; }
+  .item-name{
+    flex:1; min-width:0;
+    border:none; background:transparent; color:inherit; font:inherit;
+    text-transform:uppercase; letter-spacing:.02em; padding:0;
+  }
+  .price-input{ flex:none; display:flex; align-items:baseline; gap:2px; }
+  .price-input span{ color:var(--ink-soft); }
+  .price-input input{
+    width:4.6em; border:none; background:transparent; color:inherit; font:inherit;
+    text-align:right; padding:0;
+  }
+  .edit-note{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:10.5px; font-style:italic;
+    color: var(--ink-soft);
+    margin:8px 0 0;
+  }
+  .visually-hidden{
+    position:absolute; width:1px; height:1px; overflow:hidden;
+    clip:rect(0 0 0 0); white-space:nowrap;
+  }
+
+  input:focus-visible, button:focus-visible{
+    outline: 2px solid var(--grown);
+    outline-offset: 2px;
+    border-radius:2px;
+  }
+
+  .controls{ display:flex; flex-direction:column; gap:16px; }
+  .range-control{ display:flex; flex-direction:column; gap:7px; }
+  .range-meta{
+    display:flex; justify-content:space-between; align-items:baseline;
+    font-family:"IBM Plex Mono", monospace; font-size:12px;
+    color: var(--ink-soft); text-transform:uppercase; letter-spacing:.08em;
+  }
+  .range-meta output{ color:var(--ink); font-size:13.5px; letter-spacing:0; text-transform:none; font-weight:600; }
+
+  input[type="range"]{
+    -webkit-appearance:none; appearance:none;
+    width:100%; height:6px; margin:0; border-radius:3px;
+    background: linear-gradient(to right, var(--grown) 0%, var(--grown) var(--progress), var(--rule) var(--progress), var(--rule) 100%);
+  }
+  input[type="range"]::-webkit-slider-runnable-track{ height:6px; background:transparent; border-radius:3px; }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none;
+    width:15px; height:15px; border-radius:50%;
+    background: var(--paper);
+    border: 2px solid var(--grown);
+    margin-top:-4.5px;
+    cursor:pointer;
+  }
+  input[type="range"]::-moz-range-track{ height:6px; background:transparent; border-radius:3px; }
+  input[type="range"]::-moz-range-thumb{
+    width:13px; height:13px; border-radius:50%; background: var(--paper);
+    border: 2px solid var(--grown); cursor:pointer;
+  }
+
+  .chart-wrap{ margin: 4px 0 0; }
+  .chart{ width:100%; height:150px; display:block; overflow:visible; }
+  .chart-grid{ stroke: var(--rule); stroke-width:1; }
+  .chart-fill{ fill: var(--grown); opacity:.14; }
+  .spent-path{ fill:none; stroke: var(--spent); stroke-width:2; stroke-linecap:round; }
+  .invested-path{ fill:none; stroke: var(--grown); stroke-width:2.4; stroke-linecap:round; }
+  .chart-labels{
+    display:flex; justify-content:space-between; margin-top:4px;
+    font-family:"IBM Plex Mono", monospace; font-size:10.5px; color: var(--ink-soft);
+  }
+
+  .legend{
+    display:flex; justify-content:center; gap:22px; margin-top:12px;
+    font-family:"IBM Plex Mono", monospace; font-size:11px; color: var(--ink-soft);
+  }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .legend i{ width:8px; height:8px; display:inline-block; }
+  .legend .spent-key{ background: var(--spent); }
+  .legend .invested-key{ background: var(--grown); }
+
+  .totals{
+    margin: 22px 0 8px;
+    border-top: 1px dashed var(--rule);
+    padding-top: 16px;
+  }
+  .total-row{
+    display:flex; justify-content:space-between;
+    font-family:"IBM Plex Mono", monospace; font-size:13px;
+    padding: 5px 0;
+  }
+  .total-row span{ color: var(--ink-soft); text-transform:uppercase; letter-spacing:.06em; }
+  .total-row strong{ font-variant-numeric: tabular-nums; font-weight:600; }
+  .total-row.growth-row strong{ color: var(--grown); }
+
+  .grand-total{
+    position:relative;
+    margin-top:18px;
+    padding-top:16px;
+    border-top: 2px solid var(--ink);
+    text-align:center;
+  }
+  .grand-total p{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:11.5px; letter-spacing:.1em; text-transform:uppercase;
+    color: var(--ink-soft);
+    margin:0;
+  }
+  .grand-total strong{
+    display:block;
+    font-family:"Big Shoulders Display", sans-serif;
+    font-weight:800;
+    font-size: clamp(40px, 10vw, 60px);
+    line-height:1;
+    color: var(--spent);
+    font-variant-numeric: tabular-nums;
+    margin-top:4px;
+  }
+  .stamp{
+    display:inline-block;
+    margin-top:14px;
+    padding:6px 14px;
+    border:2px solid var(--spent);
+    color: var(--spent);
+    font-family:"IBM Plex Mono", monospace;
+    font-size:11px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    transform: rotate(-4deg);
+    transition: transform .25s ease;
+  }
+  .stamp.thud{ transform: rotate(-4deg) scale(1.12); }
+
+  .receipt-footer{
+    margin-top:28px;
+    padding-top:14px;
+    border-top:1px dashed var(--rule);
+    text-align:center;
+  }
+  .barcode{ display:flex; justify-content:center; gap:2px; height:28px; margin:0 auto 10px; }
+  .barcode i{ display:inline-block; width:2px; background: var(--ink); opacity:.75; }
+  .receipt-footer p{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:12px; color: var(--ink);
+    margin:0 0 4px;
+  }
+  .receipt-footer span{
+    display:block;
+    font-family:"IBM Plex Mono", monospace;
+    font-size:10px; letter-spacing:.06em; text-transform:uppercase;
+    color: var(--ink-soft);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; animation:none !important; }
+  }
+</style>
+
+<main class="page">
+  <div class="page-intro">
+    <span class="status-dot" aria-hidden="true"></span>
+    <span>tiny habit calculator</span>
+  </div>
+
+  <article class="receipt" id="receipt">
+    <div class="tear tear-top" aria-hidden="true"></div>
+
+    <header class="receipt-header">
+      <div class="cup-mark">
+        <svg viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M13 36h22M17 30c-4-5 5-7 1-13M25 30c-4-6 6-8 1-17M33 30c-3-4 4-6 1-10"/>
+        </svg>
       </div>
-      <input
-        id={id}
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
-        style={{ "--progress": `${progress}%` } as React.CSSProperties}
-      />
+      <p class="overline">daily ritual, long-term math</p>
+      <h1>The Iced Latte<br>Factor</h1>
+      <p class="header-note">your coffee order has entered the chat</p>
+    </header>
+
+    <div class="receipt-meta">
+      <span id="todayStr"></span>
+      <span>ORDER #0847</span>
     </div>
-  );
-}
 
-function SteamMark() {
-  return (
-    <svg viewBox="0 0 48 48" aria-hidden="true">
-      <path d="M13 36h22M17 30c-4-5 5-7 1-13M25 30c-4-6 6-8 1-17M33 30c-3-4 4-6 1-10" />
-    </svg>
-  );
-}
+    <section class="receipt-section">
+      <div class="section-heading"><span>01</span><h2>Your usual</h2></div>
+      <div class="line-item">
+        <span class="quantity">1×</span>
+        <label class="visually-hidden" for="latteName">Latte order</label>
+        <input type="text" id="latteName" class="item-name" value="Iced oat latte" maxlength="28">
+        <div class="price-input">
+          <span>£</span>
+          <label class="visually-hidden" for="latteCost">Price per latte</label>
+          <input type="number" id="latteCost" value="4.50" min="0" max="50" step="0.25">
+        </div>
+      </div>
+      <p class="edit-note">Tap the order or price to make it yours.</p>
+    </section>
 
-export default function App() {
-  const [latteName, setLatteName] = useState("Iced oat latte");
-  const [cost, setCost] = useState(4.5);
-  const [frequency, setFrequency] = useState(5);
-  const [years, setYears] = useState(20);
-  const [rate, setRate] = useState(7);
+    <section class="receipt-section">
+      <div class="section-heading"><span>02</span><h2>The routine</h2></div>
+      <div class="controls">
+        <div class="range-control">
+          <div class="range-meta"><label for="freq">Latte runs per week</label><output id="freqOut" for="freq">5×</output></div>
+          <input type="range" id="freq" min="1" max="14" step="1" value="5">
+        </div>
+        <div class="range-control">
+          <div class="range-meta"><label for="years">Time to let it grow</label><output id="yearsOut" for="years">20 yrs</output></div>
+          <input type="range" id="years" min="5" max="40" step="1" value="20">
+        </div>
+        <div class="range-control">
+          <div class="range-meta"><label for="rate">Annual return</label><output id="rateOut" for="rate">7%</output></div>
+          <input type="range" id="rate" min="2" max="12" step="0.5" value="7">
+        </div>
+      </div>
+    </section>
 
-  const today = useMemo(
-    () =>
-      new Intl.DateTimeFormat("en-US", {
-        month: "short",
-        day: "2-digit",
-        year: "numeric",
-      })
-        .format(new Date())
-        .toUpperCase(),
-    [],
-  );
+    <section class="receipt-section">
+      <div class="section-heading"><span>03</span><h2>The plot twist</h2></div>
+      <div class="chart-wrap">
+        <svg class="chart" id="chart" viewBox="0 0 640 170" role="img" aria-label="Chart comparing cumulative amount spent against the compounded value if invested" preserveAspectRatio="none">
+          <line class="chart-grid" x1="0" x2="640" y1="42.5" y2="42.5"></line>
+          <line class="chart-grid" x1="0" x2="640" y1="85" y2="85"></line>
+          <line class="chart-grid" x1="0" x2="640" y1="127.5" y2="127.5"></line>
+          <line class="chart-grid" x1="0" x2="640" y1="170" y2="170"></line>
+          <path class="chart-fill" id="chartFill"></path>
+          <path class="spent-path" id="chartSpent"></path>
+          <path class="invested-path" id="chartInvested"></path>
+        </svg>
+        <div class="chart-labels"><span>Now</span><span id="chartYearsLabel">Year 20</span></div>
+      </div>
+      <div class="legend">
+        <span><i class="spent-key"></i>Sipped</span>
+        <span><i class="invested-key"></i>Invested</span>
+      </div>
+    </section>
 
-  const totals = useMemo(() => {
-    const weekly = cost * frequency;
+    <section class="totals">
+      <div class="total-row"><span>Weekly latte tab</span><strong id="weeklyOut">£0.00</strong></div>
+      <div class="total-row"><span>Total spent on lattes</span><strong id="spentOut">£0</strong></div>
+      <div class="total-row growth-row"><span>Potential market growth</span><strong id="growthOut">+£0</strong></div>
+    </section>
+
+    <section class="grand-total">
+      <p>If you invested the latte money instead</p>
+      <strong id="investedOut">£0</strong>
+      <div class="stamp" id="stamp">caffeine tax paid</div>
+    </section>
+
+    <footer class="receipt-footer">
+      <div class="barcode" id="barcode" aria-hidden="true"></div>
+      <p>No shame in the latte. Just know the math.</p>
+      <span>Just for fun · estimates only · not financial advice</span>
+    </footer>
+
+    <div class="tear tear-bottom" aria-hidden="true"></div>
+  </article>
+
+  <p class="page-note">made for iced latte people</p>
+</main>
+
+<script>
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  $('todayStr').textContent = new Intl.DateTimeFormat('en-US', { month:'short', day:'2-digit', year:'numeric' }).format(new Date()).toUpperCase();
+
+  const barcode = $('barcode');
+  for (let i = 0; i < 34; i++){
+    const bar = document.createElement('i');
+    const w = Math.random() > 0.8 ? 3 : 1.5;
+    bar.style.width = w + 'px';
+    bar.style.height = (Math.random() > 0.5 ? 28 : 18) + 'px';
+    barcode.appendChild(bar);
+  }
+
+  const fmtMoney = new Intl.NumberFormat('en-GB', { style:'currency', currency:'GBP', maximumFractionDigits:0 });
+  const fmtMoneyExact = new Intl.NumberFormat('en-GB', { style:'currency', currency:'GBP', minimumFractionDigits:2, maximumFractionDigits:2 });
+
+  const el = {
+    latteName: $('latteName'), latteCost: $('latteCost'),
+    freq: $('freq'), freqOut: $('freqOut'),
+    years: $('years'), yearsOut: $('yearsOut'),
+    rate: $('rate'), rateOut: $('rateOut'),
+    weeklyOut: $('weeklyOut'), spentOut: $('spentOut'), growthOut: $('growthOut'),
+    investedOut: $('investedOut'), stamp: $('stamp'),
+    chartYearsLabel: $('chartYearsLabel'),
+  };
+
+  function setProgress(input){
+    const p = ((input.value - input.min) / (input.max - input.min)) * 100;
+    input.style.setProperty('--progress', p + '%');
+  }
+
+  function compute(){
+    const cost = Math.max(0, parseFloat(el.latteCost.value) || 0);
+    const freq = parseInt(el.freq.value, 10);
+    const years = parseInt(el.years.value, 10);
+    const ratePct = parseFloat(el.rate.value);
+
+    el.freqOut.textContent = freq + '×';
+    el.yearsOut.textContent = years + ' yrs';
+    el.rateOut.textContent = ratePct + '%';
+    el.chartYearsLabel.textContent = 'Year ' + years;
+
+    [el.freq, el.years, el.rate].forEach(setProgress);
+
+    const weekly = cost * freq;
     const monthly = weekly * (52 / 12);
     const months = years * 12;
-    const monthlyRate = rate / 100 / 12;
+    const monthlyRate = ratePct / 100 / 12;
     const spent = monthly * months;
-    const invested =
-      monthlyRate > 0 ? monthly * ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate) : spent;
+    const invested = monthlyRate > 0
+      ? monthly * ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate)
+      : spent;
+    const growth = invested - spent;
 
-    const points = Array.from({ length: Math.max(years + 1, 2) }, (_, index) => {
+    el.weeklyOut.textContent = fmtMoneyExact.format(weekly);
+    el.spentOut.textContent = fmtMoney.format(spent);
+    el.growthOut.textContent = '+' + fmtMoney.format(growth);
+    animateNumber(el.investedOut, invested, fmtMoney);
+
+    el.stamp.classList.remove('thud');
+    void el.stamp.offsetWidth;
+    el.stamp.classList.add('thud');
+
+    const pointCount = Math.max(years + 1, 2);
+    const points = Array.from({ length: pointCount }, (_, index) => {
       const pointMonths = index * 12;
       return {
         spent: monthly * pointMonths,
-        invested:
-          monthlyRate > 0
-            ? monthly * ((Math.pow(1 + monthlyRate, pointMonths) - 1) / monthlyRate)
-            : monthly * pointMonths,
+        invested: monthlyRate > 0
+          ? monthly * ((Math.pow(1 + monthlyRate, pointMonths) - 1) / monthlyRate)
+          : monthly * pointMonths,
       };
     });
+    drawChart(points, invested);
+  }
 
-    return { weekly, monthly, spent, invested, growth: invested - spent, points };
-  }, [cost, frequency, years, rate]);
+  let numberAnimFrame = null;
+  function animateNumber(node, target, fmt){
+    if (numberAnimFrame) cancelAnimationFrame(numberAnimFrame);
+    if (reduceMotion){ node.textContent = fmt.format(target); return; }
+    const start = performance.now();
+    const from = parseFloat(node.dataset.raw || '0');
+    node.dataset.raw = target;
+    function tick(t){
+      const p = Math.min(1, (t - start) / 700);
+      const eased = 1 - Math.pow(1 - p, 3);
+      node.textContent = fmt.format(from + (target - from) * eased);
+      if (p < 1) numberAnimFrame = requestAnimationFrame(tick);
+    }
+    numberAnimFrame = requestAnimationFrame(tick);
+  }
 
-  const chart = useMemo(() => {
-    const width = 640;
-    const height = 170;
-    const inset = 6;
-    const maxValue = Math.max(totals.invested, 1);
-    const path = (key: "spent" | "invested") =>
-      totals.points
-        .map((point, index) => {
-          const x = inset + (index / (totals.points.length - 1)) * (width - inset * 2);
-          const y = height - inset - (point[key] / maxValue) * (height - inset * 2);
-          return `${index === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
-        })
-        .join(" ");
+  function pathFor(points, key, width, height, inset, maxValue){
+    return points.map((point, index) => {
+      const x = inset + (index / (points.length - 1)) * (width - inset * 2);
+      const y = height - inset - (point[key] / maxValue) * (height - inset * 2);
+      return (index === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1);
+    }).join(' ');
+  }
 
-    return { width, height, spent: path("spent"), invested: path("invested") };
-  }, [totals]);
+  function drawChart(points, maxInvested){
+    const width = 640, height = 170, inset = 6;
+    const maxValue = Math.max(maxInvested, 1);
+    const spentPath = pathFor(points, 'spent', width, height, inset, maxValue);
+    const investedPath = pathFor(points, 'invested', width, height, inset, maxValue);
+    const fillPath = investedPath + ` L${width-inset},${height-inset} L${inset},${height-inset} Z`;
 
-  return (
-    <main className="page">
-      <div className="page-intro">
-        <span className="status-dot" />
-        <span>tiny habit calculator</span>
-      </div>
+    const spentEl = $('chartSpent'), investedEl = $('chartInvested'), fillEl = $('chartFill');
+    spentEl.setAttribute('d', spentPath);
+    investedEl.setAttribute('d', investedPath);
+    fillEl.setAttribute('d', fillPath);
 
-      <article className="receipt">
-        <div className="tear tear-top" aria-hidden="true" />
+    if (!reduceMotion){
+      [spentEl, investedEl].forEach(path => {
+        const len = path.getTotalLength();
+        path.style.transition = 'none';
+        path.style.strokeDasharray = len;
+        path.style.strokeDashoffset = len;
+        void path.offsetWidth;
+        path.style.transition = 'stroke-dashoffset .8s ease';
+        path.style.strokeDashoffset = '0';
+      });
+    }
+  }
 
-        <header className="receipt-header">
-          <div className="cup-mark">
-            <SteamMark />
-          </div>
-          <p className="overline">daily ritual, long-term math</p>
-          <h1>
-            The Iced Latte
-            <br />
-            Factor
-          </h1>
-          <p className="header-note">your coffee order has entered the chat</p>
-        </header>
+  [el.latteName, el.latteCost, el.freq, el.years, el.rate].forEach(input => {
+    input.addEventListener('input', compute);
+  });
 
-        <div className="receipt-meta">
-          <span>{today}</span>
-          <span>ORDER #0847</span>
-        </div>
-
-        <section className="receipt-section">
-          <div className="section-heading">
-            <span>01</span>
-            <h2>Your usual</h2>
-          </div>
-
-          <div className="line-item">
-            <span className="quantity">1×</span>
-            <label className="visually-hidden" htmlFor="latte-name">
-              Latte order
-            </label>
-            <input
-              id="latte-name"
-              className="item-name"
-              value={latteName}
-              maxLength={28}
-              onChange={(event) => setLatteName(event.target.value)}
-            />
-            <div className="price-input">
-              <span>£</span>
-              <label className="visually-hidden" htmlFor="latte-cost">
-                Price per latte
-              </label>
-              <input
-                id="latte-cost"
-                type="number"
-                min="0"
-                max="50"
-                step="0.25"
-                value={cost}
-                onChange={(event) => setCost(Math.max(0, Number(event.target.value)))}
-              />
-            </div>
-          </div>
-          <p className="edit-note">Tap the order or price to make it yours.</p>
-        </section>
-
-        <section className="receipt-section">
-          <div className="section-heading">
-            <span>02</span>
-            <h2>The routine</h2>
-          </div>
-          <div className="controls">
-            <RangeControl
-              label="Latte runs per week"
-              valueLabel={`${frequency}×`}
-              min={1}
-              max={14}
-              step={1}
-              value={frequency}
-              onChange={setFrequency}
-            />
-            <RangeControl
-              label="Time to let it grow"
-              valueLabel={`${years} yrs`}
-              min={5}
-              max={40}
-              step={1}
-              value={years}
-              onChange={setYears}
-            />
-            <RangeControl
-              label="Annual return"
-              valueLabel={`${rate}%`}
-              min={2}
-              max={12}
-              step={0.5}
-              value={rate}
-              onChange={setRate}
-            />
-          </div>
-        </section>
-
-        <section className="receipt-section">
-          <div className="section-heading">
-            <span>03</span>
-            <h2>The plot twist</h2>
-          </div>
-
-          <div className="chart-wrap">
-            <svg
-              className="chart"
-              viewBox={`0 0 ${chart.width} ${chart.height}`}
-              role="img"
-              aria-label={`Over ${years} years, latte spending totals ${formatMoney.format(totals.spent)}, while investing it could grow to ${formatMoney.format(totals.invested)}.`}
-              preserveAspectRatio="none"
-            >
-              <defs>
-                <linearGradient id="invested-area" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#3759e8" stopOpacity=".16" />
-                  <stop offset="100%" stopColor="#3759e8" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              {[0.25, 0.5, 0.75, 1].map((line) => (
-                <line
-                  key={line}
-                  x1="0"
-                  x2={chart.width}
-                  y1={chart.height * line}
-                  y2={chart.height * line}
-                  className="chart-grid"
-                />
-              ))}
-              <path
-                d={`${chart.invested} L${chart.width - 6},${chart.height - 6} L6,${chart.height - 6} Z`}
-                className="chart-fill"
-              />
-              <path d={chart.spent} className="spent-path" />
-              <path d={chart.invested} className="invested-path" />
-            </svg>
-            <div className="chart-labels">
-              <span>Now</span>
-              <span>Year {years}</span>
-            </div>
-          </div>
-
-          <div className="legend">
-            <span>
-              <i className="spent-key" /> Sipped
-            </span>
-            <span>
-              <i className="invested-key" /> Invested
-            </span>
-          </div>
-        </section>
-
-        <section className="totals">
-          <div className="total-row">
-            <span>Weekly latte tab</span>
-            <strong>{formatMoneyExact.format(totals.weekly)}</strong>
-          </div>
-          <div className="total-row">
-            <span>Total spent on lattes</span>
-            <strong>{formatMoney.format(totals.spent)}</strong>
-          </div>
-          <div className="total-row growth-row">
-            <span>Potential market growth</span>
-            <strong>+{formatMoney.format(totals.growth)}</strong>
-          </div>
-        </section>
-
-        <section className="grand-total">
-          <p>If you invested the latte money instead</p>
-          <strong>{formatMoney.format(totals.invested)}</strong>
-          <div className="stamp">Opportunity cost</div>
-        </section>
-
-        <footer className="receipt-footer">
-          <div className="barcode" aria-hidden="true">
-            {Array.from({ length: 34 }, (_, index) => (
-              <i key={index} style={{ "--i": index } as React.CSSProperties} />
-            ))}
-          </div>
-          <p>No shame in the latte. Just know the math.</p>
-          <span>Just for fun · estimates only · not financial advice</span>
-        </footer>
-
-        <div className="tear tear-bottom" aria-hidden="true" />
-      </article>
-
-      <p className="page-note">made for iced latte people</p>
-    </main>
-  );
-}
-
-      
+  compute();
+})();
+</script>
